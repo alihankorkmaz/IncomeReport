@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1E3A5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kazanç">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Haftalık Kazanç</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Concept: a plain income statement. Neutral ground, navy for controls, green only for money earned, red and amber for money taken out. */
+:root{
+  --bg:#F5F6F8; --surface:#FFFFFF; --ink:#101828; --ink-2:#475467; --ink-3:#667085;
+  --line:#E4E7EC; --accent:#1E3A5F; --accent-ink:#FFFFFF;
+  --bar:#3FA374; --up:#0F7B45; --down:#C23B2A; --warn:#C98A12;
+  --f-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-head:'Space Grotesk','Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1015; --surface:#151A21; --ink:#EAECF0; --ink-2:#A9B2BF; --ink-3:#8D97A6;
+    --line:#262D37; --accent:#9DBCEB; --accent-ink:#0C1A30;
+    --bar:#2E8A62; --up:#4CC38A; --down:#F2806F; --warn:#E8B04A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1015; --surface:#151A21; --ink:#EAECF0; --ink-2:#A9B2BF; --ink-3:#8D97A6;
+  --line:#262D37; --accent:#9DBCEB; --accent-ink:#0C1A30;
+  --bar:#2E8A62; --up:#4CC38A; --down:#F2806F; --warn:#E8B04A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); font:15px/1.45 var(--f-body);
+  padding-top:20px; padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  font-variant-numeric:tabular-nums;
+}
+.app{max-width:640px;margin:0 auto}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1{font:600 22px/1.2 var(--f-head);margin:0;letter-spacing:-.01em}
+.muted{color:var(--ink-3)}
+.sub{margin:4px 0 0;font-size:13px;color:var(--ink-3)}
+.eyebrow{margin:0;font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.notice{margin:14px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink-2)}
+.sec{margin-top:30px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+
+/* range chips */
+.chips{display:flex;gap:5px;margin-top:18px;flex-wrap:wrap}
+.chip{min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink-2);font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+
+/* week stepper */
+.wnav{display:flex;gap:8px;margin-top:16px}
+.wbtn{flex:1;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13.5px;font-weight:500;cursor:pointer}
+.wbtn[disabled]{opacity:.4;cursor:default}
+
+/* hero */
+.hero{margin-top:22px}
+.hero-num{margin:6px 0 4px;font:600 clamp(38px,12vw,52px)/1 var(--f-head);letter-spacing:-.02em}
+.hero-num span{font-size:.42em;font-weight:500;color:var(--ink-3);margin-left:4px;letter-spacing:0}
+.hero-sub{margin:0;font-size:14px;color:var(--ink-2)}
+.hero-sub b{color:var(--ink);font-weight:600}
+.delta{margin:6px 0 0;font-size:13px;font-weight:500}
+.up{color:var(--up)} .down{color:var(--down)}
+
+/* income statement */
+.stmt{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.sbar{display:flex;gap:2px;height:12px;margin-bottom:8px}
+.sbar i{display:block;border-radius:3px;min-width:3px}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto 44px;gap:8px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.srow .amt{text-align:right;white-space:nowrap}
+.srow .pct{text-align:right;font-size:12.5px;color:var(--ink-3)}
+.srow.sub{padding:3px 0 3px 18px;border-top:0;font-size:13px;color:var(--ink-2)}
+.srow.sub+.srow:not(.sub){margin-top:7px}
+.srow.head{font-weight:600}
+.srow.total{border-top:1.5px solid var(--ink-3);margin-top:2px}
+.srow.total .lbl{font-weight:600}
+.srow.total .amt{font:600 21px/1.1 var(--f-head);color:var(--up)}
+.srow.total .pct{font-weight:600;color:var(--up)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.stmt-note{margin:10px 0 0;font-size:12.5px;color:var(--ink-3)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr;margin-top:18px;border-top:1px solid var(--line)}
+.stat{padding:14px 0;border-bottom:1px solid var(--line);min-width:0}
+.stat:nth-child(odd){padding-right:12px}
+.stat:nth-child(even){padding-left:16px;border-left:1px solid var(--line)}
+.stat:nth-child(3){grid-column:1/-1;padding-left:0;padding-right:0;border-left:0}
+.stat .k{font-size:12px;color:var(--ink-3)}
+.stat .v{font:600 19px/1.3 var(--f-head);margin-top:2px}
+.stat .d{font-size:12px;color:var(--ink-3)}
+
+/* chart */
+.readout{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0}
+.ro-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ro-head b{font-weight:600}
+.ro-net{font:600 18px/1.2 var(--f-head)}
+.ro-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px 12px;margin-top:10px}
+.ro-grid div{font-size:12.5px;min-width:0}
+.ro-grid span{display:block;font-size:11.5px;color:var(--ink-3)}
+.note{margin:8px 0 0;font-size:12.5px;color:var(--ink-2)}
+#chart{margin-top:10px}
+#chart svg{display:block;width:100%;height:auto;touch-action:manipulation}
+.grid{stroke:var(--line);stroke-width:1}
+.base{stroke:var(--ink-3);stroke-width:1;opacity:.6}
+.ax{fill:var(--ink-3);font:9.5px var(--f-body);font-variant-numeric:tabular-nums}
+.bar{fill:var(--bar)}
+.bar.sel{fill:var(--up)}
+.avg{stroke:var(--ink);stroke-width:1.25;stroke-dasharray:4 3;fill:none}
+.val{fill:var(--ink);font:600 10px var(--f-body)}
+.hit{cursor:pointer}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;vertical-align:middle;margin-right:6px}
+.sw-bar{width:10px;height:10px;border-radius:2px;background:var(--bar)}
+.sw-dash{width:16px;height:0;border-top:1.5px dashed var(--ink)}
+
+/* tables + lists */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:0 0 8px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:right;white-space:nowrap}
+td{padding:11px 0;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td:first-child{white-space:normal}
+td.net{font-weight:600}
+.wk{display:flex;gap:12px;align-items:center;width:100%;padding:13px 0;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;cursor:pointer}
+.wk:first-child{border-top:1px solid var(--line)}
+.wk-main{flex:1;min-width:0}
+.wk-main b{font-weight:600}
+.wk-main small{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-3)}
+.wk-net{font:600 17px/1.2 var(--f-head);text-align:right;white-space:nowrap}
+.wk-net small{display:block;font:400 11.5px var(--f-body);color:var(--ink-3)}
+.empty{padding:28px 0;color:var(--ink-2)}
+.empty b{display:block;font:600 17px var(--f-head);color:var(--ink);margin-bottom:4px}
+
+/* form */
+.form{display:grid;gap:16px;margin-top:18px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:grid;gap:6px;min-width:0}
+.field label{font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.inp{position:relative}
+.inp input{width:100%;height:48px;padding:0 38px 0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:16px}
+.inp input.nosuf{padding-right:12px}
+.inp i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-size:13px;color:var(--ink-3);pointer-events:none}
+.hint{margin:0;font-size:12.5px;color:var(--ink-3)}
+.hint.warn{color:var(--down)}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 16px}
+.calc div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.calc div span:first-child{color:var(--ink-2)}
+.calc div.total{border-bottom:0;align-items:baseline}
+.calc div.total span:first-child{color:var(--ink);font-weight:600}
+.calc div.total span:last-child{font:600 24px/1.1 var(--f-head)}
+.actions{display:flex;gap:10px}
+.btn{height:48px;padding:0 20px;border:1px solid transparent;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer}
+.btn.primary{flex:1;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.danger{background:transparent;color:var(--down)}
+.btn[disabled]{opacity:.6;cursor:default}
+.confirm{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--down);border-radius:12px;font-size:14px}
+
+/* bottom bar + toast */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
+.tabs{display:flex;max-width:640px;margin:0 auto}
+.tab{flex:1;display:grid;justify-items:center;gap:2px;padding:4px 0;border:0;background:none;color:var(--ink-3);font-size:11.5px;font-weight:500;cursor:pointer}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--accent);font-weight:600}
+.tab.add .ico{display:grid;place-items:center;width:40px;height:28px;border-radius:999px;background:var(--accent);color:var(--accent-ink)}
+.tab.add{color:var(--ink-2)}
+.tab.add[aria-current="page"]{color:var(--accent)}
+#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:6;
+  max-width:calc(100% - 32px);padding:10px 16px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;
+  opacity:0;visibility:hidden;transition:opacity .18s}
+#toast.on{opacity:1;visibility:visible}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Haftalık Kazanç</h1>
+    <p class="sub" id="sub">Uber + Bolt</p>
+  </header>
+  <p class="notice" id="notice" hidden></p>
+
+  <main>
+    <!-- ÖZET -->
+    <section data-view="ozet" id="v-ozet">
+      <div class="chips" id="chips" role="group" aria-label="Dönem">
+        <button class="chip" type="button" data-range="1" aria-pressed="false">Son hf</button>
+        <button class="chip" type="button" data-range="m" aria-pressed="false">Bu ay</button>
+        <button class="chip" type="button" data-range="4" aria-pressed="false">4 hf</button>
+        <button class="chip" type="button" data-range="8" aria-pressed="false">8 hf</button>
+        <button class="chip" type="button" data-range="12" aria-pressed="true">12 hf</button>
+        <button class="chip" type="button" data-range="0" aria-pressed="false">Tümü</button>
+      </div>
+      <div id="ozet-body"></div>
+    </section>
+
+    <!-- HAFTALAR -->
+    <section data-view="haftalar" id="v-haftalar" hidden>
+      <div class="sec-head" style="margin-top:22px"><h2 class="eyebrow">Tüm haftalar</h2><span class="muted" style="font-size:12.5px">Düzenlemek için dokun</span></div>
+      <div id="list"></div>
+      <div class="sec" id="backup">
+        <div class="sec-head"><h2 class="eyebrow">Yedek</h2></div>
+        <p class="hint" id="b-info"></p>
+        <div class="actions" style="margin-top:12px;flex-wrap:wrap">
+          <button class="btn ghost" type="button" id="b-exp">Yedeği indir</button>
+          <button class="btn ghost" type="button" id="b-imp">Yedeği yükle</button>
+          <button class="btn ghost" type="button" id="b-csv">Excel (CSV)</button>
+        </div>
+        <input type="file" id="b-file" accept=".json,application/json" hidden>
+      </div>
+    </section>
+
+    <!-- EKLE / DÜZENLE -->
+    <section data-view="ekle" id="v-ekle" hidden>
+      <div class="sec-head" style="margin-top:22px"><h2 class="eyebrow" id="form-title">Yeni hafta</h2></div>
+      <form class="form" id="form" novalidate>
+        <div class="field">
+          <label for="f-date">Hafta başlangıcı</label>
+          <div class="inp"><input id="f-date" type="date" class="nosuf" required></div>
+          <p class="hint" id="f-hint"></p>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="f-uber">Uber brüt</label><div class="inp"><input id="f-uber" inputmode="decimal" autocomplete="off" placeholder="0,00"><i>zł</i></div></div>
+          <div class="field"><label for="f-bolt">Bolt brüt</label><div class="inp"><input id="f-bolt" inputmode="decimal" autocomplete="off" placeholder="0,00"><i>zł</i></div></div>
+        </div>
+        <div class="field"><label for="f-ref">Refunds</label><div class="inp"><input id="f-ref" inputmode="decimal" autocomplete="off" placeholder="0,00"><i>zł</i></div></div>
+        <div class="row2">
+          <div class="field"><label for="f-cash">Cash</label><div class="inp"><input id="f-cash" inputmode="decimal" autocomplete="off" placeholder="0,00"><i>zł</i></div></div>
+          <div class="field"><label for="f-fuel">Yakıt kartı</label><div class="inp"><input id="f-fuel" inputmode="decimal" autocomplete="off" placeholder="0,00"><i>zł</i></div></div>
+        </div>
+        <div class="field"><label for="f-own">Cash / cepten yakıt</label><div class="inp"><input id="f-own" inputmode="decimal" autocomplete="off" placeholder="0,00"><i>zł</i></div><p class="hint">Yakıt kartı dışında cebinden ya da cash'ten aldığın yakıt. Bankaya yatandan düşmez, sadece net kazançtan düşer.</p></div>
+        <div class="field"><label for="f-note">Not (isteğe bağlı)</label><div class="inp"><input id="f-note" class="nosuf" autocomplete="off" maxlength="200"></div></div>
+
+        <div class="calc" aria-live="polite">
+          <div><span>Brüt gelir toplamı</span><span id="p-gross">0,00 zł</span></div>
+          <div><span>Partner ücreti (%5 + 50 zł)</span><span id="p-fee">0,00 zł</span></div>
+          <div><span>Bankaya yatacak</span><span id="p-bank">0,00 zł</span></div>
+          <div class="total"><span>Net kazanç</span><span id="p-net">0,00 zł</span></div>
+        </div>
+
+        <div class="confirm" id="del-confirm" hidden>
+          <span>Bu hafta silinsin mi?</span>
+          <span style="display:flex;gap:8px">
+            <button class="btn ghost" type="button" id="del-no" style="height:40px">Vazgeç</button>
+            <button class="btn danger" type="button" id="del-yes" style="height:40px;border-color:var(--down)">Evet, sil</button>
+          </span>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="submit" id="btn-save">Kaydet</button>
+          <button class="btn ghost" type="button" id="btn-cancel">Vazgeç</button>
+          <button class="btn danger" type="button" id="btn-del" hidden>Sil</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Bölümler">
+  <div class="tabs">
+    <button class="tab" type="button" data-go="ozet" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Özet
+    </button>
+    <button class="tab" type="button" data-go="haftalar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>Haftalar
+    </button>
+    <button class="tab add" type="button" data-go="ekle">
+      <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px"><path d="M12 5v14M5 12h14"/></svg></span>Yeni hafta
+    </button>
+  </div>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var MON=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+var MONF=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function mkNF(o){try{return new Intl.NumberFormat('pl-PL',Object.assign({useGrouping:'always'},o))}catch(e){return new Intl.NumberFormat('pl-PL',o)}}
+var nf=mkNF({minimumFractionDigits:2,maximumFractionDigits:2});
+var nf0=mkNF({maximumFractionDigits:0});
+var NB=' ';
+function $(s){return document.querySelector(s)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+/* ---------- hesap (Excel ile aynı mantık) ---------- */
+function cents(v){return Math.round((Number(v)||0)*100)}
+function money(c){return nf.format(c/100)+NB+'zł'}
+function calc(w){
+  var gross=cents(w.uber)+cents(w.bolt);
+  var base=gross+cents(w.refunds);
+  var cash=cents(w.cash), fuel=cents(w.fuel), own=cents(w.fuelOwn);  // own = cash/cepten yakıt
+  var fee=base===0?0:base/20+5000;            // (brüt + refunds) x %5 + 50 zł
+  return {gross:gross,base:base,cash:cash,fuel:fuel,own:own,fee:Math.round(fee),
+          bank:Math.round(base-cash-fuel-fee),  // bankaya yatan
+          net:Math.round(base-fee-fuel-own)};   // net kazanç = bankaya yatan + cash - cepten yakıt
+}
+
+/* ---------- tarih ---------- */
+function parseD(s){var p=s.split('-').map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2]))}
+function iso(d){return d.toISOString().slice(0,10)}
+function addD(s,n){var d=parseD(s);d.setUTCDate(d.getUTCDate()+n);return iso(d)}
+function dm(s){var d=parseD(s);return d.getUTCDate()+' '+MON[d.getUTCMonth()]}
+function range(s){var a=parseD(s),b=parseD(addD(s,7));return a.getUTCMonth()===b.getUTCMonth()?a.getUTCDate()+'–'+b.getUTCDate()+' '+MON[b.getUTCMonth()]:a.getUTCDate()+' '+MON[a.getUTCMonth()]+'–'+b.getUTCDate()+' '+MON[b.getUTCMonth()]}
+function shortDM(s){var d=parseD(s);return d.getUTCDate()+'.'+String(d.getUTCMonth()+1).padStart(2,'0')}
+function monthKey(s){return addD(s,3).slice(0,7)}
+function monthLabel(k){var p=k.split('-').map(Number);return MONF[p[1]-1]+' '+p[0]}
+function thisMonday(){var d=new Date();var u=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var wd=(u.getUTCDay()+6)%7;u.setUTCDate(u.getUTCDate()-wd);return iso(u)}
+function todayKey(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+
+/* ---------- durum ---------- */
+var weeks=[], loaded=false, mode='loading', col=null, view='ozet', editId=null, rangeK='12', selId=null, focusId=null, localData={};
+try{var rs=localStorage.getItem('kazanc-range'); if(rs!==null&&['1','m','4','8','12','0'].indexOf(rs)>-1) rangeK=rs}catch(e){}
+
+function norm(id,d){return {id:id,weekStart:d.weekStart||id,uber:+d.uber||0,bolt:+d.bolt||0,refunds:+d.refunds||0,cash:+d.cash||0,fuel:+d.fuel||0,fuelOwn:+d.fuelOwn||0,note:d.note||''}}
+function setWeeks(list){weeks=list.sort(function(a,b){return a.weekStart<b.weekStart?-1:a.weekStart>b.weekStart?1:0})}
+function rows(){return weeks.map(function(w){return Object.assign({},w,calc(w))})}
+
+/* ---------- depolama ---------- */
+async function put(id,data){
+  if(col){await col.doc(id).set(data);return}
+  localData[id]=data; persistLocal(); setWeeks(Object.keys(localData).map(function(k){return norm(k,localData[k])})); renderAll();
+}
+async function remove(id){
+  if(col){await col.doc(id).delete();return}
+  delete localData[id]; persistLocal(); setWeeks(Object.keys(localData).map(function(k){return norm(k,localData[k])})); renderAll();
+}
+function persistLocal(){try{localStorage.setItem('kazanc-v1',JSON.stringify(localData))}catch(e){toast('Kayıt tarayıcıya yazılamadı. Gizli sekmede olabilirsin.')}}
+function startLocal(){
+  mode='local';
+  try{localData=JSON.parse(localStorage.getItem('kazanc-v1')||'{}')||{}}catch(e){localData={}}
+  setWeeks(Object.keys(localData).map(function(k){return norm(k,localData[k])}));
+  loaded=true;
+  renderAll();
+}
+function showNotice(t){var n=$('#notice');n.textContent=t;n.hidden=!t}
+
+/* ---------- görünümler ---------- */
+function go(v){
+  view=v;
+  document.querySelectorAll('[data-view]').forEach(function(s){s.hidden=s.getAttribute('data-view')!==v});
+  document.querySelectorAll('.tab').forEach(function(t){
+    if(t.getAttribute('data-go')===v)t.setAttribute('aria-current','page');else t.removeAttribute('aria-current');
+  });
+  window.scrollTo(0,0);
+}
+function renderAll(){renderHead();renderOzet();renderList();if(typeof updBackup==='function')updBackup();if(view==='ekle')updateHint()}
+
+function renderHead(){
+  var r=rows();
+  $('#sub').textContent=r.length?(r.length+' hafta kayıtlı · '+dm(r[0].weekStart)+' – '+dm(addD(r[r.length-1].weekStart,7))):'Uber + Bolt';
+}
+
+function niceStep(maxZ){
+  var steps=[50,100,200,250,500,1000,2000,2500,5000,10000];
+  for(var i=0;i<steps.length;i++){if(maxZ/steps[i]<=4)return steps[i]}
+  return 20000;
+}
+function barPath(x,y,w,h,r){
+  r=Math.min(r,h,w/2);
+  return 'M'+x+','+(y+h)+' L'+x+','+(y+r)+' Q'+x+','+y+' '+(x+r)+','+y+' L'+(x+w-r)+','+y+' Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+' L'+(x+w)+','+(y+h)+' Z';
+}
+function chartSVG(vis,avg){
+  var W=360,H=214,L=42,R=8,T=20,B=26,pw=W-L-R,ph=H-T-B,n=vis.length;
+  var maxZ=Math.max(1,Math.max.apply(null,vis.map(function(r){return r.net/100})));
+  var step=niceStep(maxZ), top=Math.ceil(maxZ/step)*step;
+  function Y(v){return T+ph-v/top*ph}
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Haftalık net kazanç grafiği">';
+  for(var v=0;v<=top;v+=step){
+    var y=Y(v);
+    s+='<line class="'+(v?'grid':'base')+'" x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'"/>';
+    s+='<text class="ax" x="'+(L-6)+'" y="'+(y+3.3)+'" text-anchor="end">'+nf0.format(v)+'</text>';
+  }
+  var slot=pw/n, bw=Math.min(24,slot*0.68);
+  var every=Math.max(1,Math.ceil(66/slot));
+  vis.forEach(function(r,i){
+    var x=L+i*slot+(slot-bw)/2, h=Math.max(1,r.net/100/top*ph), y=T+ph-h, sel=r.id===selId;
+    s+='<path class="bar'+(sel?' sel':'')+'" d="'+barPath(x,y,bw,h,3)+'"/>';
+    if(sel){
+      var tx=Math.min(W-R-14,Math.max(L+14,x+bw/2));
+      s+='<text class="val" x="'+tx+'" y="'+(y-5)+'" text-anchor="middle">'+nf0.format(r.net/100)+'</text>';
+    }
+    if((n-1-i)%every===0){
+      var lx=Math.min(W-34,Math.max(34,L+i*slot+slot/2));
+      s+='<text class="ax" x="'+lx+'" y="'+(H-8)+'" text-anchor="middle">'+range(r.weekStart)+'</text>';
+    }
+  });
+  var ya=Y(avg/100);
+  s+='<line class="avg" x1="'+L+'" x2="'+(W-R)+'" y1="'+ya+'" y2="'+ya+'"/>';
+  vis.forEach(function(r,i){
+    s+='<rect class="hit" data-id="'+esc(r.id)+'" x="'+(L+i*slot)+'" y="'+T+'" width="'+slot+'" height="'+(ph+B)+'" fill="transparent"/>';
+  });
+  return s+'</svg>';
+}
+
+function sumOf(list,k){return list.reduce(function(a,r){return a+r[k]},0)}
+function sumC(list,k){return list.reduce(function(a,r){return a+cents(r[k])},0)}
+function prevMonthKey(k){var p=k.split('-').map(Number);var y=p[0],m=p[1]-1;if(m<1){m=12;y--}return y+'-'+String(m).padStart(2,'0')}
+function pctOf(x,t){if(t<=0)return '%0';var v=x/t*100;return (v>0&&v<1)?'<%1':'%'+Math.round(v)}
+
+function renderOzet(){
+  var box=$('#ozet-body'), all=rows();
+  document.querySelectorAll('#chips .chip').forEach(function(c){c.setAttribute('aria-pressed',String(c.getAttribute('data-range')===rangeK))});
+  if(!loaded){box.innerHTML='<p class="empty muted">Kayıtlar yükleniyor…</p>';return}
+  if(!all.length){
+    box.innerHTML='<div class="empty"><b>Henüz hafta yok</b>İlk haftanın Uber, Bolt, cash ve yakıt rakamlarını girince ortalamalar ve grafik burada görünür.</div><button class="btn primary" type="button" data-go="ekle" style="width:100%">İlk haftayı ekle</button>';
+    return;
+  }
+  var vis,prev=[],title,prevLabel='';
+  var fi=-1;
+  if(rangeK==='1'){
+    fi=all.findIndex(function(r){return r.id===focusId});if(fi<0)fi=all.length-1;focusId=all[fi].id;
+    vis=[all[fi]];prev=fi>0?[all[fi-1]]:[];title=range(all[fi].weekStart);prevLabel='önceki haftaya göre';
+  }else if(rangeK==='m'){
+    var mk=todayKey(), pk=prevMonthKey(mk);
+    vis=all.filter(function(r){return monthKey(r.weekStart)===mk});
+    prev=all.filter(function(r){return monthKey(r.weekStart)===pk});
+    title=MONF[+mk.slice(5)-1]+' '+mk.slice(0,4);
+    prevLabel='geçen aya göre';
+  }else if(rangeK==='0'){
+    vis=all;title='Tüm zamanlar';
+  }else{
+    var N=+rangeK;vis=all.slice(-N);prev=all.slice(-2*N,-N);
+    title='Son '+vis.length+' hafta';
+    prevLabel='önceki '+prev.length+' haftaya göre';
+  }
+  if(!vis.length){
+    box.innerHTML='<div class="empty"><b>'+esc(title)+' için kayıt yok</b>Bu döneme ait hafta eklenmemiş. Yeni hafta ekleyebilir ya da başka bir dönem seçebilirsin.</div>';
+    return;
+  }
+  var n=vis.length;
+  var tBase=sumOf(vis,'base'), tFee=sumOf(vis,'fee'), tFuel=sumOf(vis,'fuel'), tOwn=sumOf(vis,'own');
+  var tNet=sumOf(vis,'net'), tBank=sumOf(vis,'bank'), tCash=sumOf(vis,'cash');
+  var tUber=sumC(vis,'uber'), tBolt=sumC(vis,'bolt'), tRef=sumC(vis,'refunds');
+  var avgNet=Math.round(tNet/n), avgBase=Math.round(tBase/n), avgBank=Math.round(tBank/n);
+  var best=vis.reduce(function(a,r){return r.net>a.net?r:a},vis[0]);
+  if(!vis.some(function(r){return r.id===selId}))selId=vis[n-1].id;
+  var cvis=vis;
+  if(rangeK==='1'){selId=focusId;var st0=Math.max(0,Math.min(fi-6,all.length-12));cvis=all.slice(st0,st0+12)}
+  var cavg=Math.round(sumOf(cvis,'net')/cvis.length);
+  var navHtml='<div class="wnav"><button class="wbtn" type="button" data-step="-1"'+(fi<=0?' disabled':'')+'>‹ Önceki hafta</button><button class="wbtn" type="button" data-step="1"'+(fi>=all.length-1?' disabled':'')+'>Sonraki hafta ›</button></div>';
+  var sel=vis.filter(function(r){return r.id===selId})[0];
+
+  var h=(rangeK==='1'?navHtml:'')+'<div class="hero"><p class="eyebrow">Net kazanç · '+esc(title)+'</p>';
+  h+='<p class="hero-num">'+nf.format(tNet/100)+'<span>zł</span></p>';
+  h+=(n===1?'<p class="hero-sub">Brüt <b>'+money(tBase)+'</b> · 1 hafta</p>':'<p class="hero-sub">Haftalık ortalama <b>'+money(avgNet)+'</b> · '+n+' hafta</p>');
+  if(prev.length){
+    var pAvg=sumOf(prev,'net')/prev.length;
+    if(pAvg>0){
+      var pc=Math.round((avgNet-pAvg)/pAvg*100);
+      h+='<p class="delta '+(pc>=0?'up':'down')+'">'+(pc>=0?'▲ +':'▼ −')+Math.abs(pc)+'% '+(n===1?'net kazanç ':'haftalık ortalama ')+prevLabel+'</p>';
+    }
+  }
+  h+='</div>';
+
+  // gelir tablosu
+  var parts=[[tNet,'var(--up)'],[tFee,'var(--down)'],[tFuel+tOwn,'var(--warn)']];
+  h+='<div class="stmt"><p class="eyebrow" style="margin-bottom:10px">Gelir tablosu</p><div class="sbar" role="img" aria-label="Brüt gelirin dağılımı: net '+pctOf(tNet,tBase)+', partner ücreti '+pctOf(tFee,tBase)+', yakıt '+pctOf(tFuel+tOwn,tBase)+'">';
+  parts.forEach(function(p){if(p[0]>0)h+='<i style="flex:'+p[0]+' 1 0;background:'+p[1]+'"></i>'});
+  h+='</div>';
+  h+='<div class="srow head"><span class="lbl">Brüt gelir</span><span class="amt">'+money(tBase)+'</span><span class="pct">%100</span></div>';
+  if(tUber)h+='<div class="srow sub"><span>Uber</span><span class="amt">'+money(tUber)+'</span><span></span></div>';
+  if(tBolt)h+='<div class="srow sub"><span>Bolt</span><span class="amt">'+money(tBolt)+'</span><span></span></div>';
+  if(tRef)h+='<div class="srow sub"><span>Refunds</span><span class="amt">'+money(tRef)+'</span><span></span></div>';
+  h+='<div class="srow"><span><i class="sw" style="background:var(--down)"></i>Partner ücreti</span><span class="amt down">−'+NB+money(tFee)+'</span><span class="pct">'+pctOf(tFee,tBase)+'</span></div>';
+  if(tFuel)h+='<div class="srow"><span><i class="sw" style="background:var(--warn)"></i>Yakıt kartı</span><span class="amt down">−'+NB+money(tFuel)+'</span><span class="pct">'+pctOf(tFuel,tBase)+'</span></div>';
+  if(tOwn)h+='<div class="srow"><span><i class="sw" style="background:var(--warn)"></i>Cepten yakıt</span><span class="amt down">−'+NB+money(tOwn)+'</span><span class="pct">'+pctOf(tOwn,tBase)+'</span></div>';
+  h+='<div class="srow total"><span class="lbl"><i class="sw" style="background:var(--up)"></i>Net kazanç</span><span class="amt">'+money(tNet)+'</span><span class="pct">'+pctOf(tNet,tBase)+'</span></div>';
+  h+='<p class="stmt-note">Net kazanç = bankaya yatan '+money(tBank)+' + cash '+money(tCash)+(tOwn?' − cepten yakıt '+money(tOwn):'')+'</p></div>';
+
+  h+='<div class="stats">';
+  h+='<div class="stat"><div class="k">'+(n===1?'Brüt':'Haftalık ort. brüt')+'</div><div class="v">'+money(avgBase)+'</div><div class="d">Uber + Bolt + refunds</div></div>';
+  h+='<div class="stat"><div class="k">'+(n===1?'Net kazanç':'Haftalık ort. net kazanç')+'</div><div class="v up">'+money(avgNet)+'</div><div class="d">kesintiler düşülmüş</div></div>';
+  if(n>1)h+='<div class="stat"><div class="k">En iyi hafta</div><div class="v up">'+money(best.net)+'</div><div class="d">'+esc(range(best.weekStart))+'</div></div>';
+  h+='</div>';
+
+  h+='<div class="sec"><div class="sec-head"><h2 class="eyebrow">Haftalık net kazanç (zł)</h2></div>';
+  h+='<div class="readout"><div class="ro-head"><b>'+esc(range(sel.weekStart))+'</b><span class="ro-net">'+money(sel.net)+'</span></div>';
+  h+='<div class="ro-grid"><div><span>Brüt</span>'+money(sel.base)+'</div><div><span>Partner ücreti</span>'+money(sel.fee)+'</div><div><span>Yakıt kartı</span>'+money(sel.fuel)+'</div><div><span>Cash</span>'+money(sel.cash)+'</div>'+(sel.own?'<div><span>Cepten yakıt</span>'+money(sel.own)+'</div>':'')+'<div><span>Bankaya yatan</span>'+money(sel.bank)+'</div></div>';
+  if(sel.note)h+='<p class="note">'+esc(sel.note)+'</p>';
+  h+='</div>';
+  h+='<div id="chart">'+chartSVG(cvis,cavg)+'</div>';
+  h+='<div class="legend"><span><i class="sw-bar"></i>Net kazanç</span><span><i class="sw-dash"></i>Ortalama '+nf0.format(cavg/100)+' zł</span></div></div>';
+
+  var groups={};
+  all.forEach(function(r){var k=monthKey(r.weekStart);var g=groups[k]||(groups[k]={n:0,gross:0,net:0,bank:0});g.n++;g.gross+=r.base;g.net+=r.net;g.bank+=r.bank});
+  var keys=Object.keys(groups).sort().reverse();
+  h+='<div class="sec"><div class="sec-head"><h2 class="eyebrow">Aylık özet (zł)</h2></div><div class="tbl-wrap"><table><thead><tr><th>Ay</th><th>Hf</th><th>Brüt</th><th>Net</th><th>Ort./hf</th></tr></thead><tbody>';
+  keys.forEach(function(k){var g=groups[k];
+    h+='<tr><td>'+monthLabel(k)+'</td><td>'+g.n+'</td><td>'+nf.format(g.gross/100)+'</td><td class="net up">'+nf.format(g.net/100)+'</td><td>'+nf.format(Math.round(g.net/g.n)/100)+'</td></tr>';
+  });
+  h+='</tbody></table></div><p class="hint" style="margin-top:10px">Bir hafta, ortasındaki güne göre ayına yazılır.</p></div>';
+  box.innerHTML=h;
+}
+
+function renderList(){
+  var el=$('#list');
+  if(!loaded){el.innerHTML='<p class="empty muted">Kayıtlar yükleniyor…</p>';return}
+  var all=rows().reverse();
+  if(!all.length){el.innerHTML='<div class="empty"><b>Henüz hafta yok</b>Yeni hafta sekmesinden ilk kaydı ekle.</div>';return}
+  el.innerHTML=all.map(function(r){
+    return '<button class="wk" type="button" data-edit="'+esc(r.id)+'"><span class="wk-main"><b>'+esc(range(r.weekStart))+'</b><small>Brüt '+nf.format(r.base/100)+' · Bankaya '+nf.format(r.bank/100)+(r.note?' · '+esc(r.note):'')+'</small></span><span class="wk-net">'+nf.format(r.net/100)+' zł<small>net</small></span></button>';
+  }).join('');
+}
+
+/* ---------- form ---------- */
+function fmtIn(v){return v?String(v).replace('.',','):''}
+function val(id){var s=$(id).value.replace(/\s/g,'').replace(',','.');var n=parseFloat(s);return isFinite(n)?n:0}
+function defaultStart(){
+  if(!weeks.length)return thisMonday();
+  return addD(weeks[weeks.length-1].weekStart,7);
+}
+function openForm(id){
+  editId=id||null;
+  var w=id?weeks.filter(function(x){return x.id===id})[0]:null;
+  $('#form-title').textContent=w?'Haftayı düzenle':'Yeni hafta';
+  $('#f-date').value=w?w.weekStart:defaultStart();
+  $('#f-uber').value=w?fmtIn(w.uber):'';
+  $('#f-bolt').value=w?fmtIn(w.bolt):'';
+  $('#f-ref').value=w?fmtIn(w.refunds):'';
+  $('#f-cash').value=w?fmtIn(w.cash):'';
+  $('#f-fuel').value=w?fmtIn(w.fuel):'';
+  $('#f-own').value=w?fmtIn(w.fuelOwn):'';
+  $('#f-note').value=w?w.note:'';
+  $('#btn-del').hidden=!w;
+  $('#del-confirm').hidden=true;
+  go('ekle');updateHint();updatePreview();
+}
+function updateHint(){
+  var d=$('#f-date').value, h=$('#f-hint');
+  h.className='hint';
+  if(!d){h.textContent='';return}
+  var t=range(d);
+  if(parseD(d).getUTCDay()!==1){h.textContent=t+' · Bu tarih pazartesi değil.';h.className='hint warn';return}
+  if(weeks.some(function(x){return x.id===d&&x.id!==editId})){h.textContent=t+' · Bu hafta zaten kayıtlı, kaydedersen güncellenir.';h.className='hint warn';return}
+  h.textContent=t;
+}
+function updatePreview(){
+  var c=calc({uber:val('#f-uber'),bolt:val('#f-bolt'),refunds:val('#f-ref'),cash:val('#f-cash'),fuel:val('#f-fuel'),fuelOwn:val('#f-own')});
+  $('#p-gross').textContent=money(c.gross);
+  $('#p-fee').textContent=money(c.fee);
+  $('#p-bank').textContent=money(c.bank);
+  $('#p-net').textContent=money(c.net);
+}
+var toastT;
+function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on')},2200)}
+
+async function save(){
+  var date=$('#f-date').value;
+  if(!date){toast('Hafta başlangıç tarihini seç.');return}
+  var data={weekStart:date,uber:val('#f-uber'),bolt:val('#f-bolt'),refunds:val('#f-ref'),cash:val('#f-cash'),fuel:val('#f-fuel'),fuelOwn:val('#f-own'),note:$('#f-note').value.trim()};
+  var b=$('#btn-save');b.disabled=true;
+  try{
+    await put(date,data);
+    if(editId&&editId!==date)await remove(editId);
+    selId=date;editId=null;
+    toast('Kaydedildi');go('ozet');
+  }catch(e){toast('Kaydedilemedi. Tekrar dene.')}
+  finally{b.disabled=false}
+}
+
+/* ---------- olaylar ---------- */
+document.addEventListener('click',function(e){
+  var g=e.target.closest('[data-go]');
+  if(g){var v=g.getAttribute('data-go');if(v==='ekle')openForm(null);else go(v);return}
+  var ed=e.target.closest('[data-edit]');
+  if(ed){openForm(ed.getAttribute('data-edit'));return}
+  var ch=e.target.closest('.chip');
+  if(ch){rangeK=ch.getAttribute('data-range');try{localStorage.setItem('kazanc-range',rangeK)}catch(x){}renderOzet();return}
+  var stp=e.target.closest('[data-step]');
+  if(stp){if(!stp.disabled){var al=rows();var ci=al.findIndex(function(r){return r.id===focusId});if(ci<0)ci=al.length-1;ci+=+stp.getAttribute('data-step');if(ci>=0&&ci<al.length){focusId=al[ci].id;renderOzet()}}return}
+  var hit=e.target.closest('.hit');
+  if(hit){selId=hit.getAttribute('data-id');if(rangeK==='1')focusId=selId;renderOzet()}
+});
+document.addEventListener('pointerover',function(e){
+  if(e.pointerType!=='mouse')return;
+  var hit=e.target.closest&&e.target.closest('.hit');
+  if(hit&&rangeK!=='1'&&hit.getAttribute('data-id')!==selId){selId=hit.getAttribute('data-id');renderOzet()}
+});
+['#f-uber','#f-bolt','#f-ref','#f-cash','#f-fuel','#f-own'].forEach(function(s){$(s).addEventListener('input',updatePreview)});
+$('#f-date').addEventListener('input',updateHint);
+$('#form').addEventListener('submit',function(e){e.preventDefault();save()});
+$('#btn-cancel').addEventListener('click',function(){editId=null;go(weeks.length?'haftalar':'ozet')});
+$('#btn-del').addEventListener('click',function(){$('#del-confirm').hidden=false});
+$('#del-no').addEventListener('click',function(){$('#del-confirm').hidden=true});
+$('#del-yes').addEventListener('click',async function(){
+  try{await remove(editId);editId=null;toast('Silindi');go('haftalar')}catch(e){toast('Silinemedi. Tekrar dene.')}
+});
+
+
+/* ---------- yedek ---------- */
+function requestPersist(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}}
+function updBackup(){
+  var el=$('#b-info');if(!el)return;
+  var t=null;try{t=localStorage.getItem('kazanc-lastbackup')}catch(e){}
+  var n=Object.keys(localData).length;
+  el.textContent='Kayıtlar bu telefonda tutulur ('+n+' hafta). '+(t?'Son yedek: '+dm(t)+'.':'Henüz yedek alınmadı.')+' Ayda bir yedek almanı öneririm.';
+}
+async function saveFile(name,text,type){
+  var blob=new Blob([text],{type:type});
+  try{
+    var f=new File([blob],name,{type:type});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return true}
+  }catch(e){if(e&&e.name==='AbortError')return false}
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},4000);
+  return true;
+}
+function todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+async function exportJSON(){
+  var obj={app:'haftalik-kazanc',version:1,exportedAt:new Date().toISOString(),weeks:localData};
+  var ok=await saveFile('kazanc-yedek-'+todayISO()+'.json',JSON.stringify(obj,null,1),'application/json');
+  if(ok){try{localStorage.setItem('kazanc-lastbackup',todayISO())}catch(e){}updBackup();toast('Yedek hazır')}
+}
+function csvNum(c){return String(c/100).replace('.',',')}
+function csvTxt(t){return '"'+String(t).replace(/"/g,'""')+'"'}
+async function exportCSV(){
+  var head=['Hafta başlangıcı','Hafta','Uber','Bolt','Refunds','Cash','Yakıt kartı','Cepten yakıt','Brüt','Partner ücreti','Bankaya yatan','Net kazanç','Not'];
+  var lines=[head.join(';')];
+  rows().forEach(function(r){
+    lines.push([r.weekStart,csvTxt(range(r.weekStart)),csvNum(cents(r.uber)),csvNum(cents(r.bolt)),csvNum(cents(r.refunds)),csvNum(r.cash),csvNum(r.fuel),csvNum(r.own),csvNum(r.base),csvNum(r.fee),csvNum(r.bank),csvNum(r.net),csvTxt(r.note)].join(';'));
+  });
+  var ok=await saveFile('kazanc-'+todayISO()+'.csv','﻿'+lines.join('\r\n'),'text/csv');
+  if(ok)toast('CSV hazır');
+}
+function importJSON(file){
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var o=JSON.parse(rd.result);
+      if(!o||o.app!=='haftalik-kazanc'||!o.weeks||typeof o.weeks!=='object')throw new Error('format');
+      var cnt=0;
+      Object.keys(o.weeks).forEach(function(k){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return;
+        var d=o.weeks[k]||{};
+        localData[k]={weekStart:k,uber:+d.uber||0,bolt:+d.bolt||0,refunds:+d.refunds||0,cash:+d.cash||0,fuel:+d.fuel||0,fuelOwn:+d.fuelOwn||0,note:String(d.note||'').slice(0,200)};
+        cnt++;
+      });
+      persistLocal();
+      setWeeks(Object.keys(localData).map(function(k){return norm(k,localData[k])}));
+      renderAll();updBackup();
+      toast(cnt+' hafta yüklendi');
+    }catch(e){toast('Bu dosya bir kazanç yedeği değil.')}
+  };
+  rd.onerror=function(){toast('Dosya okunamadı.')};
+  rd.readAsText(file);
+}
+$('#b-exp').addEventListener('click',exportJSON);
+$('#b-csv').addEventListener('click',exportCSV);
+$('#b-imp').addEventListener('click',function(){$('#b-file').click()});
+$('#b-file').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(f)importJSON(f);e.target.value=''});
+
+renderAll();
+startLocal();
+requestPersist();
+updBackup();
+})();
+</script>
+</body>
+</html>
